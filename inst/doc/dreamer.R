@@ -18,7 +18,20 @@ head(data)
 ggplot(data, aes(dose, response)) + geom_point()
 
 ## -----------------------------------------------------------------------------
-# BAYESIAN MODEL AVERAGING
+model_quad(
+  mu_b1 = 0,
+  sigma_b1 = 10,
+  mu_b2 = 0,
+  sigma_b2 = 10,
+  mu_b3 = 0,
+  sigma_b3 = 10,
+  shape = 1,
+  rate = .001,
+  w_prior = 1 / 2
+)
+
+## -----------------------------------------------------------------------------
+# Bayesian model averaging
 output <- dreamer_mcmc(
   data = data,
   n_adapt = 1e3,
@@ -55,7 +68,7 @@ output <- dreamer_mcmc(
 )
 
 ## -----------------------------------------------------------------------------
-names(output)
+output
 
 ## -----------------------------------------------------------------------------
 summary(output)
@@ -64,7 +77,7 @@ summary(output)
 posterior(output)
 
 # posterior Pr(effect of dose - effect of reference dose)
-posterior(x = output, reference_dose = 0) 
+posterior(x = output, reference_dose = 0)
 
 ## -----------------------------------------------------------------------------
 plot(output)
@@ -154,17 +167,16 @@ diagnostics(output)
 diagnostics(output$mod_emax)
 
 ## ---- fig.height = 8, fig.width = 6-------------------------------------------
-# traceplot for all parameters for each model
-# plot_trace(output)
-
 # single model
 plot_trace(output$mod_quad)
+
+# traceplot for all parameters for each model using: plot_trace(output)
 
 ## -----------------------------------------------------------------------------
 dreamer_plot_prior(
   doses = c(0, 2.5, 5),
   mod_linear_binary = model_linear_binary(
-    mu_b1 = -1,
+    mu_b1 = - 1,
     sigma_b1 = .1,
     mu_b2 = 1,
     sigma_b2 = .1,
@@ -179,9 +191,9 @@ dreamer_plot_prior(
   n_samples = 100,
   plot_draws = TRUE,
   mod_quad_binary = model_quad_binary(
-    mu_b1 = -.5,
+    mu_b1 = - .5,
     sigma_b1 = .2,
-    mu_b2 = -.5,
+    mu_b2 = - .5,
     sigma_b2 = .2,
     mu_b3 = .5,
     sigma_b3 = .1,
@@ -194,7 +206,7 @@ dreamer_plot_prior(
 dreamer_plot_prior(
   doses = c(0, 2.5, 5),
   mod_linear_binary = model_linear_binary(
-    mu_b1 = -1,
+    mu_b1 = - 1,
     sigma_b1 = .1,
     mu_b2 = 1,
     sigma_b2 = .1,
@@ -202,9 +214,9 @@ dreamer_plot_prior(
     w_prior = .75
   ),
   mod_quad_binary = model_quad_binary(
-    mu_b1 = -.5,
+    mu_b1 = - .5,
     sigma_b1 = .2,
-    mu_b2 = -.5,
+    mu_b2 = - .5,
     sigma_b2 = .2,
     mu_b3 = .5,
     sigma_b3 = .1,
@@ -269,7 +281,7 @@ ggplot(data_long, aes(time, response, group = dose, color = factor(dose))) +
   geom_point()
 
 ## -----------------------------------------------------------------------------
-# BAYESIAN MODEL AVERAGING
+# Bayesian model averaging
 output_long <- dreamer_mcmc(
   data = data_long,
   n_adapt = 1e3,

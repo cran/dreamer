@@ -161,10 +161,10 @@ base_dreamer_predictive_plot <- function(
 #' @return Returns the ggplot object.
 #' @example man/examples/ex-plot.R
 #' @export
-plot.dreamer <- function(
+plot.dreamer_mcmc <- function(
   x,
   doses = attr(x, "doses"),
-  times = NULL,
+  times = attr(x, "times"),
   probs = c(.025, .975),
   data = NULL,
   n_smooth = 50,
@@ -178,7 +178,7 @@ plot.dreamer <- function(
   times <- get_time(x, times, max_length = Inf)
   force(width)
   force(doses)
-  if (!is.null(attr(x, "longitudinal_model")) & length(times) > 1) {
+  if (!is.null(attr(x, "longitudinal_model")) && length(times) > 1) {
     p <- plot_longitudinal(
       x = x,
       doses = doses,
@@ -221,7 +221,7 @@ plot.dreamer <- function(
     to = max(doses),
     length.out = n_smooth
   )
-  if (n_smooth > 0 & !any_indep) {
+  if (n_smooth > 0 && !any_indep) {
     p <- base_dreamer_plot(
       x = x,
       doses = range_of_doses,
@@ -231,7 +231,7 @@ plot.dreamer <- function(
       p = p
     )
   }
-  if (predictive > 0 & !any_indep) {
+  if (predictive > 0 && !any_indep) {
     p <- base_dreamer_predictive_plot(
       x = x,
       doses = range_of_doses,
@@ -241,7 +241,7 @@ plot.dreamer <- function(
       predictive = predictive,
       p = p
     )
-  } else if (predictive > 0 & any_indep) {
+  } else if (predictive > 0 && any_indep) {
     p <- suppressMessages(
       base_dreamer_plot_error_bar(
         x = x,
@@ -313,7 +313,9 @@ dreamer_plot_prior <- function(
   check_times(times, any_longitudinal)
   mods <- vapply(
     x,
-    function(y) any(grepl("dreamer_mcmc", class(y))),
+    function(y) {
+      any(inherits(y, c("dreamer_mcmc_continuous", "dreamer_mcmc_binary")))
+    },
     logical(1)
   ) %>%
     which()
@@ -322,7 +324,7 @@ dreamer_plot_prior <- function(
   }
   any_independent <- vapply(
     x,
-    function(y) any(grepl("independent", class(y))),
+    function(y) inherits(y, "dreamer_mcmc_independent"),
     logical(1)
   ) %>%
     any()
@@ -379,39 +381,6 @@ dreamer_plot_prior <- function(
   return(p)
 }
 
-#' @name plot.dreamer_bma
-#' @description plot posterior from Bayesian model averaging.
-#' @rdname dreamerplot
-#' @export
-plot.dreamer_bma <- function(
-  x,
-  doses = x$doses,
-  times = x$times,
-  probs = c(.025, .975),
-  data = NULL,
-  n_smooth = 200,
-  predictive = 0,
-  width = bar_width(doses),
-  reference_dose = NULL,
-  ...
-) {
-  check_no_dots("plot.dreamer_bma()", ...)
-  force(doses)
-  force(width)
-  NextMethod(
-    "plot",
-    x,
-    doses = doses,
-    times = times,
-    probs = probs,
-    data = data,
-    n_smooth = n_smooth,
-    predictive = predictive,
-    width = width,
-    reference_dose = reference_dose
-  )
-}
-
 #' @title Compare Posterior Fits
 #' @param ... `dreamer_mcmc` objects to be used for plotting.
 #' @inheritParams dreamerplot
@@ -440,7 +409,7 @@ plot_comparison.default <- function(
   n_smooth = 50,
   width = bar_width(doses)
 ) {
-  if (is.null(times) & !is.null(attr(list(...)[[1]], "times"))) {
+  if (is.null(times) && !is.null(attr(list(...)[[1]], "times"))) {
     times <- max(attr(list(...)[[1]], "times"))
   }
   p <- plot_comparison_worker(
@@ -470,7 +439,9 @@ plot_comparison.dreamer_bma <- function(
   times <- get_time(x, times, max_length = Inf)
   model_index <- vapply(
     x,
-    function(model) any(grepl("dreamer_mcmc", class(model))),
+    function(model) {
+      any(inherits(model, c("dreamer_mcmc_continuous", "dreamer_mcmc_binary")))
+    },
     logical(1)
   ) %>%
     which()
@@ -767,14 +738,14 @@ any_independent <- function(x) {
 any_independent.dreamer_bma <- function(x) {
   vapply(
     x,
-    function(y) any(grepl("dreamer_mcmc_independent", class(y))),
+    function(y) inherits(y, "dreamer_mcmc_independent"),
     logical(1)
   ) %>%
     any()
 }
 
 any_independent.default <- function(x) {
-  any(grepl("dreamer_mcmc_independent", class(x)))
+  inherits(x, "dreamer_mcmc_independent")
 }
 
 aggregate_data <- function(data, type) {
@@ -851,13 +822,13 @@ check_no_dots <- function(function_name, ...) {
 }
 
 check_times <- function(times, any_longitudinal) {
-  if (any_longitudinal & is.null(times)) {
+  if (any_longitudinal && is.null(times)) {
     stop(
       "Must specify 'times' argument with longitudinal models.",
       call. = FALSE
     )
   }
-  if (!any_longitudinal & !is.null(times)) {
+  if (!any_longitudinal && !is.null(times)) {
     stop(
       "Can only specify 'times' argument with longitudinal models.",
       call. = FALSE
@@ -866,7 +837,7 @@ check_times <- function(times, any_longitudinal) {
 }
 
 check_names <- function(x) {
-  if (is.null(names(x)) | any(names(x) == "")) {
+  if (is.null(names(x)) || any(names(x) == "")) {
     stop("All models must be named", call. = FALSE)
   }
 }

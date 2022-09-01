@@ -1,8 +1,8 @@
 Package: dreamer
 Title: Dose Response Models for Bayesian Model Averaging
-Version: 3.0.0
+Version: 3.1.0
 Authors@R: c(
-    person(given = "Richard",
+    person(given = c("Richard", "Daniel"),
            family = "Payne",
            role = c("aut", "cre"),
            email = "paynestatistics@gmail.com"),
@@ -24,22 +24,22 @@ Description: Fits (longitudinal) dose-response models utilizing a Bayesian model
 URL: https://github.com/rich-payne/dreamer
 BugReports: https://github.com/rich-payne/dreamer/issues
 License: MIT + file LICENSE
-Imports: coda, dplyr (>= 1.0.0), ggplot2, graphics, purrr, rootSolve,
-        rjags (>= 4-8), rlang (>= 0.4.5), stats, tidyr (>= 1.0.2),
-        tidyselect (>= 1.1)
+Imports: coda, dplyr (>= 1.0.0), ellipsis (>= 0.3), ggplot2, graphics,
+        purrr, rootSolve, rjags (>= 4-8), rlang (>= 0.4.5), stats,
+        tidyr (>= 1.0.2), tidyselect (>= 1.1)
 Encoding: UTF-8
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.1
 Suggests: testthat (>= 3.0), fs (>= 1.5), knitr, rmarkdown, tibble,
         spelling
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Language: en-US
 NeedsCompilation: no
-Packaged: 2021-08-19 17:14:50 UTC; c263386
-Author: Richard Payne [aut, cre],
+Packaged: 2022-08-31 14:46:52 UTC; c263386
+Author: Richard Daniel Payne [aut, cre],
   William Michael Landau [rev],
   Mitch Thomann [rev],
   Eli Lilly and Company [cph]
-Maintainer: Richard Payne <paynestatistics@gmail.com>
+Maintainer: Richard Daniel Payne <paynestatistics@gmail.com>
 Repository: CRAN
-Date/Publication: 2021-08-20 09:50:02 UTC
+Date/Publication: 2022-09-01 09:10:49 UTC

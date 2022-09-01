@@ -90,7 +90,7 @@ get_post_mean_samps <- function(x, doses, times, iter = NULL) {
 
 #' @describeIn posterior posterior summary for linear model.
 #' @export
-posterior.dreamer <- function(
+posterior.dreamer_mcmc <- function(
   x,
   doses = attr(x, "doses"),
   times = attr(x, "times"),
@@ -225,7 +225,9 @@ posterior.dreamer_bma <- function(
 get_mcmc_index <- function(x) {
   vapply(
     x,
-    function(y) any(grepl("mcmc_", class(y))),
+    function(y) {
+      any(inherits(y, c("dreamer_mcmc_continuous", "dreamer_mcmc_binary")))
+    },
     logical(1)
   ) %>%
     which()
@@ -240,7 +242,7 @@ probit <- function(x) {
 }
 
 ilogit <- function(x) {
-  1 / (1 + exp(-x))
+  1 / (1 + exp(- x))
 }
 
 iprobit <- function(x) {
@@ -369,7 +371,7 @@ make_reference_dose <- function(samps, reference_dose, original_doses) {
     dplyr::mutate(
       mean_response = .data$mean_response - .data$mean_response_adj
     ) %>%
-    dplyr::select(-.data$reference_dose, -.data$mean_response_adj) %>%
+    dplyr::select(- .data$reference_dose, - .data$mean_response_adj) %>%
     dplyr::filter(.data$dose %in% !!original_doses)
 }
 
@@ -417,9 +419,9 @@ summarize_samples_binary <- function(
   original_doses,
   predictive
 ) {
-  if (!is.null(reference_dose) & predictive == 0) {
+  if (!is.null(reference_dose) && predictive == 0) {
     samps <- make_reference_dose(samps, reference_dose, original_doses)
-  } else if (!is.null(reference_dose) & predictive > 0) {
+  } else if (!is.null(reference_dose) && predictive > 0) {
     samps <- add_adjustment(samps, reference_dose) %>%
       dplyr::mutate(
         mean_response = (
@@ -428,7 +430,7 @@ summarize_samples_binary <- function(
           ) / !!predictive
       ) %>%
       dplyr::filter(.data$dose %in% !!original_doses) %>%
-      dplyr::select(-.data$reference_dose, -.data$mean_response_adj)
+      dplyr::select(- .data$reference_dose, - .data$mean_response_adj)
   } else if (is.null(reference_dose)) {
     samps <- make_predictive_binary(samps, predictive)
   }

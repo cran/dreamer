@@ -40,6 +40,7 @@
 #'   Gould, A. L. (2019).  BMA-Mod: A Bayesian model averaging strategy for
 #'     determining dose-response relationships in the presence of model
 #'     uncertainty. Biometrical Journal, 61(5), 1141-1159.
+#' @example man/examples/ex-dreamer_mcmc.R
 #' @export
 dreamer_mcmc <- function( #nolint
   data,
@@ -51,11 +52,14 @@ dreamer_mcmc <- function( #nolint
   silent = FALSE,
   convergence_warn = TRUE
 ) {
-  check_data(data)
+  jags_modules <- rjags::list.modules()
+  on.exit(restore_jags_modules(jags_modules))
+  load_jags_modules()
   mods <- list(...)
   assert_dreamer_dots(mods)
   assert_independent_dots(mods)
   all_dots_binary <- assert_binary_dots(mods)
+  check_data(data, all_dots_binary)
   is_long <- check_longitudinal(mods, data)
   if (!is.null(data)) {
     if (!all_dots_binary) {
@@ -105,13 +109,25 @@ dreamer_mcmc <- function( #nolint
       all_dots_binary,
       is_long,
       doses,
+      times,
       model_index,
       model_names
     )
 
-  class(final_output) <- c("dreamer_bma", "dreamer")
+  class(final_output) <- c("dreamer_bma", "dreamer_mcmc")
   if (convergence_warn) convergence_warnings(x = final_output)
   return(final_output)
+}
+
+load_jags_modules <- function() {
+  rjags::load.module("glm", quiet = TRUE)
+}
+
+restore_jags_modules <- function(original_modules) {
+  current_modules <- rjags::list.modules()
+  ind <- which(!(current_modules %in% original_modules))
+  if (length(ind) > 0)
+    purrr::walk(current_modules[ind], ~ rjags::unload.module(.x, quiet = TRUE))
 }
 
 get_doses <- function(data) {
@@ -123,6 +139,7 @@ add_attributes <- function(
   all_dots_binary,
   is_long,
   doses,
+  times,
   model_index,
   model_names
 ) {
@@ -137,6 +154,7 @@ add_attributes <- function(
     attr(final_output, "longitudinal_model") <- NULL
   }
   attr(final_output, "doses") <- doses
+  attr(final_output, "times") <- times
   attr(final_output, "model_index") <- model_index
   attr(final_output, "model_names") <- model_names
   mcmc_index <- get_mcmc_index(final_output)
@@ -223,7 +241,9 @@ get_w_prior <- function(all_models) {
 assert_dreamer_dots <- function(mods) {
   all_dots_dreamer <- vapply(
     mods,
-    function(model) any(grepl("dreamer_", class(model))),
+    function(model) {
+      any(inherits(model, c("dreamer_continuous", "dreamer_binary")))
+    },
     logical(1)
   ) %>%
     all()
@@ -248,28 +268,49 @@ assert_independent_dots <- function(mods) {
 assert_binary_dots <- function(mods) {
   all_dots_binary <- vapply(
     mods,
-    function(model) any(grepl("binary", class(model))),
+    function(model) inherits(model, "dreamer_binary"),
     logical(1)
   ) %>%
     all()
   any_dots_binary <- vapply(
     mods,
-    function(model) any(grepl("binary", class(model))),
+    function(model) inherits(model, "dreamer_binary"),
     logical(1)
   ) %>%
     any()
-  if (any_dots_binary & !all_dots_binary) {
+  if (any_dots_binary && !all_dots_binary) {
     stop("All models must be the same type: continuous/binary.", call. = FALSE)
   }
   return(all_dots_binary)
 }
 
-check_data <- function(dat) {
+check_data <- function(dat, binary) {
   if (is.null(dat)) {
     return(NULL)
   }
   if (!all(c("dose", "response") %in% colnames(dat))) {
-    stop("data must have columns 'dose' and 'response'.", call. = FALSE)
+    rlang::abort(
+      "data must have columns \"dose\" and \"response\".",
+      class = "dreamer"
+    )
+  }
+  if (!is.numeric(dat$response)) {
+    rlang::abort(
+      "Column \"response\" in data must be numeric.",
+      class = "dreamer"
+    )
+  }
+  if (!is.numeric(dat$dose)) {
+    rlang::abort(
+      "Column \"dose\" in data must be numeric.",
+      class = "dreamer"
+    )
+  }
+  if (binary && !all(dat$response %in% c(0L, 1L))) {
+    rlang::abort(
+      "Column \"response\" must contain only zeros and ones.",
+      class = "dreamer"
+    )
   }
 }
 
@@ -367,7 +408,7 @@ check_binary <- function(data) {
   if (!all_non_neg) {
     stop("All values of data$response must be non-negative.", call. = FALSE)
   }
-  if (!all_0_or_1 & n_null) {
+  if (!all_0_or_1 && n_null) {
     stop(
       "All values of data$response must be 0 or 1",
       " unless n is specified in data.",
@@ -382,10 +423,10 @@ check_longitudinal <- function(mods, data) {
     function(x) !is.null(x$longitudinal),
     logical(1)
   )
-  if (any(is_long) & !all(is_long)) {
+  if (any(is_long) && !all(is_long)) {
     stop("All models must be longitudinal or non-longitudinal", call. = FALSE)
   }
-  if (all(is_long) & (!rlang::has_name(data, "time") & !is.null(data))) {
+  if (all(is_long) && (!rlang::has_name(data, "time") && !is.null(data))) {
     stop("data must have column 'time' if longitudinal models are specified.")
   }
   return(all(is_long))

@@ -14,7 +14,7 @@ test_that("posterior.dreamer_bma() model_index and model names", {
   )
   out <- dreamer_mcmc(
     data = data,
-    n_iter = 5,
+    n_iter = 10,
     n_chains = 2,
     convergence_warn = FALSE,
     silent = TRUE,
@@ -68,7 +68,7 @@ test_that("posterior.dreamer_bma uses model_index and iter correctly", {
   )
   out <- dreamer_mcmc(
     data = data,
-    n_iter = 5,
+    n_iter = 10,
     n_chains = 2,
     convergence_warn = FALSE,
     silent = TRUE,
@@ -109,23 +109,23 @@ test_that("posterior.dreamer_bma uses model_index and iter correctly", {
 })
 
 test_that("continuous predictive runs", {
+  set.seed(8)
   data <- dreamer_data_linear(n_cohorts = c(10, 20, 30), c(1, 3, 5), 1, 2, 2)
   mcmc <- dreamer_mcmc(
     data,
     mod = model_linear(0, 1, 0, 1, 1, 1),
-    n_iter = 5,
+    n_iter = 10,
     silent = TRUE,
     convergence_warn = FALSE,
     n_chains = 1
   )
-  expect_true(
-    tibble::is_tibble(
-      posterior(mcmc, reference_dose = 0, predictive = 10)$stats
-    )
-  )
+  stats <- posterior(mcmc, reference_dose = 0, predictive = 10)$stats
+  expect_true(tibble::is_tibble(stats))
+  expect_snapshot(stats)
 })
 
 test_that("binary predictive runs", {
+  set.seed(1)
   data <- dreamer_data_linear_binary(
     n_cohorts = c(10, 20, 30),
     dose = c(1, 3, 5),
@@ -136,7 +136,7 @@ test_that("binary predictive runs", {
   mcmc <- dreamer_mcmc(
     data,
     mod = model_linear_binary(0, 1, 0, 1, link = "logit"),
-    n_iter = 5,
+    n_iter = 10,
     silent = TRUE,
     convergence_warn = FALSE,
     n_chains = 1
@@ -153,4 +153,5 @@ test_that("binary predictive runs", {
     colnames(stats_pred),
     c("dose", "mean", "2.50%", "97.50%")
   )
+  expect_snapshot(stats)
 })

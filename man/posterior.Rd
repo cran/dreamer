@@ -2,7 +2,7 @@
 % Please edit documentation in R/posterior.R
 \name{posterior}
 \alias{posterior}
-\alias{posterior.dreamer}
+\alias{posterior.dreamer_mcmc}
 \alias{posterior.dreamer_mcmc_independent}
 \alias{posterior.dreamer_bma}
 \title{Posterior Quantities from Bayesian Model Averaging}
@@ -19,7 +19,7 @@ posterior(
   return_stats
 )
 
-\method{posterior}{dreamer}(
+\method{posterior}{dreamer_mcmc}(
   x,
   doses = attr(x, "doses"),
   times = attr(x, "times"),
@@ -98,13 +98,13 @@ doses for each MCMC iteration of the model.
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{dreamer}: posterior summary for linear model.
+\item \code{posterior(dreamer_mcmc)}: posterior summary for linear model.
 
-\item \code{dreamer_mcmc_independent}: posterior summary for independent model.
+\item \code{posterior(dreamer_mcmc_independent)}: posterior summary for independent model.
 
-\item \code{dreamer_bma}: posterior summary for Bayesian model averaging fit.
+\item \code{posterior(dreamer_bma)}: posterior summary for Bayesian model averaging fit.
+
 }}
-
 \examples{
 set.seed(888)
 data <- dreamer_data_linear(

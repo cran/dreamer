@@ -22,7 +22,7 @@ summary.dreamer_bma <- function(object, ...) {
     prior_weight = sprintf("%.1f%%", object$w_prior * 100)
   ) %>%
     dplyr::arrange(desc(.data$w_post)) %>%
-    dplyr::select(-.data$w_post)
+    dplyr::select(- .data$w_post)
   sumry <- lapply(model_list, summary)
   sumry <- purrr::map2(
     sumry,
@@ -46,8 +46,8 @@ summary.dreamer_bma <- function(object, ...) {
 #'   parameter.
 #' @example man/examples/ex-summary.R
 #' @export
-summary.dreamer <- function(object, ...) {
-  assert_no_dots("summary.dreamer", ...)
+summary.dreamer_mcmc <- function(object, ...) {
+  assert_no_dots("summary.dreamer_mcmc", ...)
   diags <- diagnostics(object)
   out <- NextMethod("summary", object) # use coda summary
   param <- rownames(out$statistics)

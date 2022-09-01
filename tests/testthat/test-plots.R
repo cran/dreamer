@@ -73,8 +73,8 @@ mcmc_long <- dreamer_mcmc(
 )
 
 gg_save <- function(plot, filename, ...) {
-  fs::dir_create("figs")
-  filename <- fs::path("figs", filename)
+  temp_dir <- tempdir()
+  filename <- fs::path(temp_dir, filename)
   ggplot2::ggsave(filename, plot, width = 7, height = 7, ...)
   filename
 }
@@ -174,7 +174,7 @@ test_that("plots comparison compare longitudinal multiple times", {
   skip_on_ci()
   expect_snapshot_file(gg_save(out, "compare_longitudinal_mulitiple_times.png"))
 })
-  
+
 test_that("plots comparison compare longitudinal single time", {
   out <- plot_comparison(mod1 = mcmc_long$lin, doses = 2, n_smooth = 5)
   expect_s3_class(out, "ggplot")
@@ -187,23 +187,25 @@ test_that("plots comparison compare longitudinal single time", {
 
 
 test_that("traceplots work", {
-  fs::dir_create("figs")
-  png(fs::path("figs", "traceplots.png"))
+  temp_dir <- tempdir()
+  path <- fs::path(temp_dir, "traceplots.png")
+  png(path)
     expect_null(plot_trace(mcmc))
   dev.off()
   skip_on_cran()
   skip_on_ci()
-  expect_snapshot_file("figs/traceplots.png")
+  expect_snapshot_file(path)
 })
 
 test_that("traceplots work single model", {
-  fs::dir_create("figs")
-  png(fs::path("figs", "traceplots_single.png"))
+  temp_dir <- tempdir()
+  path <- fs::path(temp_dir, "traceplots_single.png")
+  png(path)
     expect_null(plot_trace(mcmc$lin))
   dev.off()
   skip_on_cran()
   skip_on_ci()
-  expect_snapshot_file("figs/traceplots_single.png")
+  expect_snapshot_file(path)
 })
 
 test_that("independent predictive plot", {
@@ -350,7 +352,7 @@ test_that("binary plot with data", {
   data <- dreamer_data_linear_binary(
     n_cohorts = c(10, 20, 30),
     dose = c(1, 3, 5),
-    b1 = -1,
+    b1 = - 1,
     b2 = .5,
     link = "logit"
   )

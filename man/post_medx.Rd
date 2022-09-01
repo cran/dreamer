@@ -3,7 +3,7 @@
 \name{post_medx}
 \alias{post_medx}
 \alias{post_medx.dreamer_bma}
-\alias{post_medx.dreamer}
+\alias{post_medx.dreamer_mcmc}
 \title{Posterior Distribution of Minimum X\% Effective Dose}
 \usage{
 post_medx(
@@ -32,7 +32,7 @@ post_medx(
   ...
 )
 
-\method{post_medx}{dreamer}(
+\method{post_medx}{dreamer_mcmc}(
   x,
   ed,
   probs = c(0.025, 0.975),
@@ -109,7 +109,7 @@ output <- dreamer_mcmc(
  data = data,
  n_adapt = 1e3,
  n_burn = 1e3,
- n_iter = 1e4,
+ n_iter = 1e3,
  n_chains = 2,
  silent = FALSE,
  mod_linear = model_linear(
