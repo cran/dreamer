@@ -1,3 +1,9 @@
+# dreamer 3.2.0
+
+* Remove automatic naming of models, now requires each model to be named (#34).
+* Fix bug where candidate models could not be plotted with data (#38).
+* Fix bug where binary data could not use summarized data.
+
 # dreamer 3.1.0
 
 * Updated README.Rmd and vignettes (#1).

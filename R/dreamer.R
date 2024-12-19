@@ -57,6 +57,7 @@ dreamer_mcmc <- function( #nolint
   load_jags_modules()
   mods <- list(...)
   assert_dreamer_dots(mods)
+  assert_model_names(mods)
   assert_independent_dots(mods)
   all_dots_binary <- assert_binary_dots(mods)
   check_data(data, all_dots_binary)
@@ -67,34 +68,34 @@ dreamer_mcmc <- function( #nolint
     }
   }
   doses <- get_doses(data)
-  all_models <- name_models(mods)
   mcmc_list <- list()
-  for (i in seq_along(all_models)) {
+  for (i in seq_along(mods)) {
     start_time <- Sys.time()
-    mcmc_start_msg(names(all_models)[i], start_time, silent)
+    mcmc_start_msg(names(mods)[i], start_time, silent)
     mcmc_list[[i]] <- fit_model(
-      all_models[[i]],
+      mods[[i]],
       data = data,
       doses = doses,
       n_adapt = n_adapt,
       n_burn = n_burn,
       n_iter = n_iter,
       n_chains = n_chains,
-      silent = silent
+      silent = silent,
+      binary = all_dots_binary
     )
     end_time <- Sys.time()
     mcmc_end_msg(start_time, end_time, silent)
   }
-  names(mcmc_list) <- names(all_models)
+  names(mcmc_list) <- names(mods)
 
-  w_prior <- get_w_prior(all_models)
+  w_prior <- get_w_prior(mods)
   assert_w_prior(w_prior)
   weight_data <- prep_weight_data(data, all_dots_binary, is_long)
   w <- post_weights(weight_data, mcmc_list, w_prior)
 
   model_index <- get_model_index(mcmc_list, w, n_iter, n_chains)
   times <- if (is_long) sort(unique(data$time)) else NULL
-  model_names <- names(all_models)
+  model_names <- names(mods)
 
   final_output <- c(
     list(
@@ -143,11 +144,7 @@ add_attributes <- function(
   model_index,
   model_names
 ) {
-  if (all_dots_binary) {
-    attr(final_output, "response_type") <- "binary"
-  } else {
-    attr(final_output, "response_type") <- "continuous"
-  }
+  attr(final_output, "response_type") <- get_response_type(all_dots_binary)
   if (is_long) {
     attr(final_output, "longitudinal_model") <- TRUE
   } else {
@@ -216,16 +213,6 @@ mcmc_end_msg <- function(start_time, end_time, silent) {
         "total : ", format(round(time_diff, 2), nsmall = 2),
         " ", time_unit, "\n"
       )
-    )
-  }
-}
-
-assert_w_prior <- function(w_prior) {
-  w_total <- sum(w_prior)
-  if (!isTRUE(all.equal(w_total, 1))) {
-    stop(
-      "Sum of w_prior for all models must add to 1: ", w_total,
-      call. = FALSE
     )
   }
 }
@@ -306,9 +293,13 @@ check_data <- function(dat, binary) {
       class = "dreamer"
     )
   }
-  if (binary && !all(dat$response %in% c(0L, 1L))) {
+  if (
+    binary &&
+    !all(dat$response %in% c(0L, 1L)) &&
+    !rlang::has_name(dat, "n")
+  ) {
     rlang::abort(
-      "Column \"response\" must contain only zeros and ones.",
+      "Column \"response\" must contain only zeros and ones unless \"n\" is specified.", # nolint
       class = "dreamer"
     )
   }
@@ -332,7 +323,7 @@ convergence_warnings <- function(x, ...) {
   summaries <- summary(x)
   bad_gelman <- dplyr::filter(summaries$summary, .data$gelman_upper > 1.1) %>%
     dplyr::select(
-      .data$model, .data$param, .data$gelman_point, .data$gelman_upper
+      "model", "param", "gelman_point", "gelman_upper"
     )
   throw_convergence_warn(bad_gelman)
 }
@@ -353,22 +344,6 @@ throw_convergence_warn <- function(bad_gelman) {
     )
     warning(c(begin_wrn, specific_warnings), call. = FALSE)
   }
-}
-
-name_models <- function(model_list) {
-  for (i in seq_along(model_list)) {
-    if (
-      isTRUE(names(model_list)[i] == "") ||
-      is.null(names(model_list)[i]) ||
-      is.na(names(model_list)[i])
-    ) {
-      names(model_list)[i] <- paste0("model_", i, "_", class(model_list[[i]]))
-    }
-  }
-  if (any(duplicated(names(model_list)))) {
-    stop("Duplicate model names are not allowed.", call. = FALSE)
-  }
-  return(model_list)
 }
 
 prep_weight_data <- function(data, binary, is_longitudinal) {
@@ -393,12 +368,6 @@ dreamer_post_weights <- function(all_mcmc, w_prior, data) {
   w_post <- exp(a_s - (a + log(sum(exp(a_s - a)))))
   names(w_post) <- names(all_mcmc)
   return(list(w_prior = w_prior, w_post = w_post))
-}
-
-assert_names <- function(x, y, msg) {
-  if (!all(names(x) == names(y))) {
-    stop(msg, call. = FALSE)
-  }
 }
 
 check_binary <- function(data) {

@@ -1,7 +1,7 @@
-## ---- echo = FALSE------------------------------------------------------------
+## ----echo = FALSE-------------------------------------------------------------
 knitr::opts_chunk$set(fig.width = 6, fig.height = 4)
 
-## ---- message = FALSE---------------------------------------------------------
+## ----message = FALSE----------------------------------------------------------
 library(dreamer)
 library(dplyr)
 library(ggplot2)
@@ -166,7 +166,7 @@ diagnostics(output)
 # single model
 diagnostics(output$mod_emax)
 
-## ---- fig.height = 8, fig.width = 6-------------------------------------------
+## ----fig.height = 8, fig.width = 6--------------------------------------------
 # single model
 plot_trace(output$mod_quad)
 
